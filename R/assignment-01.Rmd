@@ -1,0 +1,249 @@
+---
+title: "EDS 222: Assignment 01"
+author: "Colleen McCamy, collaborated with Michelle Lam and Alex Reed"
+date: "Assigned: 9/22; Due: 10/04 9am"
+output:
+  tufte::tufte_html: default
+  tufte::tufte_handout:
+    citation_package: natbib
+    latex_engine: xelatex
+  tufte::tufte_book:
+    citation_package: natbib
+    latex_engine: xelatex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# Load all the packages needed here
+library(tidyverse)
+library(readr)
+library(gt)
+library(tufte)
+library(tmap)
+library(dplyr)
+library(ggplot2)
+
+# Set your file path here! Or, set this up as an .Rproj if you'd like.
+rootdir <- ("/Users/colleenmccamy/Documents/MEDS/EDS_222_Stats")
+datadir <- file.path(rootdir,"data","01-week-one") #check this matches the folder structure on your local computer
+setwd(file.path(rootdir,"homework","HW1")) #check this one too
+```
+
+*(The case study in this exercise is based on reality, but does not include actual observational data.)*
+
+# Air Pollution in Lahore, Pakistan
+
+```{r, out.width = "100%", echo=FALSE, fig.margin=TRUE}
+#knitr::include_graphics("pm_south_asia.jpeg")
+```
+
+In this exercise we will look at a case study concerning air quality in South Asia. The World Health Organization estimates that air pollution kills an estimated seven million people per year, due to its effects on the cardiovascular and respiratory systems. Out of the 40 most polluted cities in the world, South Asia is home to 37, and Pakistan was ranked to contain the second most air pollution in the world in 2020 (IQAIR, 2020). In 2019, Lahore, Pakistan was the 12th most polluted city in the world, exposing a population of 11.1 million people to increased mortality and morbidity risks.
+
+In this exercise, you are given two datasets[^1] from Lahore, Pakistan and are asked to compare the two different data collection strategies from this city. These data are:
+
+[^1]: All data for EDS 222 will be stored on the Taylor server, in the shared `/courses/EDS222/data/` directory. Please see material from EDS 214 on how to access and retrieve data from Taylor. These data are small; all compute can be handled locally. Thanks to Bren PhD student Fatiq Nadeem for assembling these data!
+
+-   Crowd-sourced data from air quality monitors located in people's homes. These data are voluntarily collected by individual households who choose to install a monitor in their home and upload their data for public access.
+
+-   Official government data from monitors installed by government officials at selected locations across Lahore. There have been reports that government officials strategically locate monitors in locations with cleaner air in order to mitigate domestic and international pressure to clean up the air.
+
+In answering the following questions, please consider the lecture content from class on sampling strategies, as well as the material in Chapter 2 of [*Introduction to Modern Statistics*](https://openintro-ims.netlify.app/). Include in your submission an `.Rmd` file and a compiled `.html` file, each containing complete answers to all questions (as well as all your code in the `.Rmd`).
+
+**Insert your answer in bold font like this below each question.**
+
+## Question 1:
+
+Load the data from each source and label it as `crowdsourced` and `govt` accordingly. For example:
+
+```{r}
+crowdsourced <- readRDS(file.path(datadir,"airpol-PK-crowdsourced.RDS"))
+govt <- readRDS(file.path(datadir, "airpol-PK-govt.RDS"))
+```
+
+1.  These dataframes have one row per pollution observation. How many pollution records are in each dataset?
+
+    **The crowdsourced dataset has 5,488 observations and the govt dataset has 1,960 rows.**
+
+```{r}
+#using the function nrow() to determine how many observations are in the dataset given that each there is one observation for each row
+
+nrow(crowdsourced)
+nrow(govt)
+
+```
+
+2.  Each monitor is located at a unique latitude and longitude location. How many unique monitors are in each dataset?[^2]
+
+    **There are 14 different unique latitude and longitude location and 5 in the govt dataset and the crowdsourced dataset.**
+
+[^2]: **Hint:** `group_by(longitude,latitude)` and `cur_group_id()` in `dplyr` will help in creating a unique identifier for each (longitude, latitude) pair.
+
+```{r}
+
+#creating a new column with longitute and latitude combined in both datasets
+crowdsourced_long_lat <- crowdsourced %>%
+  unite('long_lat', longitude, latitude, remove = FALSE)
+
+govt_long_lat <- govt %>%
+  unite('long_lat', longitude, latitude, remove = FALSE)
+
+# idenfifying all of the unique longitudes and latitude locations using the unique() function for the newly created columns
+unique(crowdsourced_long_lat$long_lat)
+unique(govt_long_lat$long_lat)
+```
+
+## Question 2:
+
+The goal of pollution monitoring in Lahore is to measure the average pollution conditions across the city.
+
+1.  What is the *population* in this setting? Please be precise.\
+    **The population in this setting is air pollution conditions across the entire city of Lahore.**
+
+2.  What are the *samples* in this setting? Please be precise.\
+    **The samples are air pollution conditions collected at the individual resident and government placed site at the specific longitude and latitude locations.**
+
+3.  These samples were not randomly collected from across locations in Lahore. Given the sampling approaches described above, discuss possible biases that may enter when we use these samples to construct estimates of population parameters.\
+    \
+    **For the govt dataset, the locations were determined by government officials. This could add biases such as selecting areas that are not reflective of the population and show lower air pollution for political purposes. The government may also only have access to installing monitors on government buildings or public areas which may not be reflective of the total air pollution in the city and present a biased sample.\
+    \
+    For the crowdsourced dataset, this data is collected by voluntary participation of installing monitors on individual's homes. This could limit the monitoring to be in mainly residential areas of Lahore and people who experience poor air quality at their home may be more inclined to add a air quality monitor because they are experiencing higher levels of air pollution. Also, since it is a voluntary air monitors may be placed at residential locations in which have access to an air monitor or have authority to install an air monitor on the outside of the residential building. Thus, could exclude residential buildings in which the occupants are renting.**
+
+## Question 3:
+
+1.  For both the government data and the crowd-sourced data, report the sample mean, sample minimum, and sample maximum value of PM 2.5 (measured in $\mu g/m^3$).\
+    \
+    **For the government data:**
+
+    -   **The sample mean of PM 2.5 is 39.64694** $\mu g/m^3$
+
+    -   **The sample minimum of PM 2.5 is 15** $\mu g/m^3$
+
+    -   **The sample maximum of PM 2.5 is 65** $\mu g/m^3$\
+
+    **For the crowd-sourced data:**
+
+    -   **The sample mean of PM 2.5 is 70.2008** $\mu g/m^3$
+
+    -   **The sample minimum of PM 2.5 is 20** $\mu g/m^3$
+
+    -   **The sample maximum of PM 2.5 is 120** $\mu g/m^3$
+
+```{r, include = TRUE, fig.margin = TRUE}
+
+#calculating the mean, minmum and maximum of government data from the govt dataset
+
+mean(govt$PM)
+min(govt$PM)
+max(govt$PM)
+
+```
+
+```{r, include = TRUE, fig.margin = TRUE}
+
+#calculating the mean, minmum and maximum of crowd-sourced data from the crowdsourced dataset
+
+mean(crowdsourced$PM)
+min(crowdsourced$PM)
+max(crowdsourced$PM)
+
+```
+
+2.  Discuss any key differences that you see between these two samples.\
+    **The sample mean, minimum and maximum are all higher for the crowd-sourced data compared to the government data. Specifically, the sample maximum for the crowd-sourced data is 1.84 times higher than the government data and the sample mean is 1.77 times higher for the crowd-sourced sample compared to the government data.**
+
+3.  Are the differences in mean pollution as expected, given what we know about the sampling strategies?\
+    **Based on the sampling strategies these differences in mean pollution between the two samples is expected. The lower sample mean of PM 2.5 for the government data compared to sample mean of PM 2.5 from the crowd-sourced sample supports the claim that government officials were strategically placing monitors in sites that experience lower air pollution.**
+
+## Question 4:
+
+Use the location of the air pollution stations for both of the sampling strategies to generate a map showing locations of each observation. Color the two samples with different colors to highlight how each sample obtains measurements from different parts of the city.[^3]
+
+[^3]: **Hint:** `longitude` indicates location in the *x*-direction, while `latitude` indicates location in the *y*-direction. With `ggplot2` this should be nothing fancy. We'll do more spatial data in `R` later in the course.
+
+```{r, include = TRUE, out.width = "100%", echo = FALSE, fig.margin = TRUE}
+
+#creating a new dataframe with a new column to identify their sampling selection method in 
+crowd_total <- crowdsourced %>%
+  mutate(selection = "Crowd-sourced placed", .after= latitude)
+
+gov_total <- govt %>%
+  mutate(selection = "Government placed", .after= longitude)
+
+#combining the two datasets for the plot
+both_methods <- rbind(crowd_total, gov_total)
+
+#plotting air quality monitor locations
+plot_selection_sites <- ggplot(data = both_methods, aes(x = longitude, y = latitude)) +
+  geom_point(aes(color = selection)) + 
+  theme_minimal() +
+  labs(x = "Longitude", 
+       y = "Latitude", 
+       title = "Location of Air Quality Monitors by Sample Selection Method", 
+       subtitle = "Location Described by Longitude and Latitude",
+       color = "Selection Sampling Method")
+
+
+plot_selection_sites
+
+```
+
+## Question 5:
+
+The local newspaper in Pakistan, *Dawn*, claims that the government is misreporting the air pollution levels in Lahore. Do the locations of monitors in question 4, relative to crowd-sourced monitors, suggest anything about a possible political bias?
+
+**Looking at the locations of monitors placed by the government compared to the crowdsourced monitors, it is illustrated that the government-placed monitors were only placed in a small portion of Lahore and were concentrated to a subset of longitudes and latitudes. Whereas the crowdsourced-placed monitors were more expansive and covered a greater breadth of longitude and latitude locations throughout the city. This additionally supports the claim that government officials were deliberate in where the government-placed monitors were located and that the sites chosen were to mitigate political pressure to address the air quality issues in the city.**
+
+## Question 6:
+
+Given the recent corruption in air quality reporting, the Prime Minister of Pakistan has hired an independent body of environmental data scientists to create an unbiased estimate of the mean PM 2.5 across Lahore using some combination of both government stations and crowd sourced observations.
+
+NASA's satellite data indicates that the average PM across Lahore is 89.2 $\mu g/m^3$. Since this is the most objective estimate of population-level PM 2.5 available, your goal is to match this mean as closely as possible by creating a new ground-level monitoring sample that draws on both the government and crowd-sourced samples.
+
+### Question 6.1:
+
+First, generate a *random sample* of size $n=1000$ air pollution records by (i) pooling observations across the government and the crowd-sourced data;[^4] and (ii) drawing observations at random from this pooled sample.
+
+[^4]: **Hint:** `bind_rows()` may be helpful.
+
+```{r, include = TRUE, eval = TRUE}
+
+# I had already pooled government and crowd-sourced collection method data for the plot, calling it below
+both_methods
+
+#creating a random sample of this data to be 1000 observations randomly selected from both collection methods
+both_methods_random <- sample_n(both_methods, 1000)
+```
+
+Second, create a *stratified random sample*. Do so by (i) stratifying your pooled data-set into strata of 0.01 degrees of latitude, and (ii) randomly sampling 200 air pollution observations from each stratum.
+
+```{r, include = TRUE, eval = TRUE}
+
+#first using mutate to round the latitudes to the second decimial point then using groupby() and sample_n() to first group by latitude and then pull 200 random samples from each group
+
+both_methods_strat <- both_methods %>%
+  mutate(across(latitude, round, digits = 2)) %>%
+  group_by(latitude) %>%
+  sample_n(size = 200)
+
+#testing that the above method worked by first ensuring that all latitudes were accounted for and then making sure the number of rows matches 1,000 which was from 5 X 200 (5 is the number of unique latitudes to the 0.01 degree and 200 was the sample size each group)
+unique(both_methods_strat$latitude)
+nrow(both_methods_strat)
+
+```
+
+### Question 6.2:
+
+Compare estimated means of PM 2.5 for each sampling strategy to the NASA estimate of 89.2 $\mu g/m^3$. Which sample seems to match the satellite data best? What would you recommend the Prime Minister do? Does your proposed sampling strategy rely more on government or on crowd-sourced data? Why might that be the case?
+
+**The mean for the random sample is 61.963** $\mu g/m^3$ **and the mean for the stratified random sample is 66.925** $\mu g/m^3$**. The mean for the stratified random sample is closer to the NASA estimate of 89.2** $\mu g/m^3$. **I would recommend that the Prime Minster and governing body of Lahore rely more on a stratified random sampling strategy instead of a random sampling as it was closer to the estimated mean. This may be the case because it takes an equal random sample from data grouped by similar locations within Lahore.**
+
+**This could help ensure that different regions of Lahore are represented equally instead of having a higher representation of data from specific locations just because there is a concentration of data from that specific location. In this case, there is a concentration of data collected from the area in which the government placed the air monitoring sensors.**
+
+```{r, include = TRUE, eval = TRUE}
+
+#calculating the mean of PM for the random sample and the random stratified sample to compare
+
+mean_rand <- mean(both_methods_random$PM)
+mean_strat <- mean(both_methods_strat$PM)
+
+```
